@@ -1,0 +1,14 @@
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/icudtl.dat
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/flutter_windows.dll
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/AssetManifest.bin
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/AssetManifest.bin.json
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/AssetManifest.json
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/assets/dhaka-city-local-bus.json
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/FontManifest.json
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/fonts/MaterialIcons-Regular.otf
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/kernel_blob.bin
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/NativeAssetsManifest.json
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/NOTICES
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/NOTICES.Z
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/packages/cupertino_icons/assets/CupertinoIcons.ttf
+C:/Users/tahmi/busease/build/windows/x64/runner/Debug/data/flutter_assets/shaders/ink_sparkle.frag
