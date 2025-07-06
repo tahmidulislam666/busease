@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'bus_search_screen.dart';
+import 'bus_name_search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -83,40 +85,128 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
     }
   }
 
-  Widget _buildAutoCompleteField({
+  Future<void> _showLocationDialog({
+    required String title,
+    required List<String> options,
+    required TextEditingController controller,
+    required VoidCallback? onSelected,
+  }) async {
+    String searchText = '';
+    List<String> filteredOptions = List.from(options);
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Select or Search Location",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.blueGrey[900]),
+                    ),
+                    SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Icon(Icons.search, size: 28),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            autofocus: true,
+                            decoration: InputDecoration(
+                              hintText: '',
+                              border: InputBorder.none,
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                searchText = value;
+                                filteredOptions = options
+                                    .where((stop) => stop.toLowerCase().contains(searchText.toLowerCase()))
+                                    .toList();
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    Divider(),
+                    Expanded(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: filteredOptions.length,
+                        separatorBuilder: (_, __) => Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final stop = filteredOptions[index];
+                          return ListTile(
+                            title: Text(stop),
+                            onTap: () {
+                              controller.text = stop;
+                              Navigator.of(context).pop();
+                              if (onSelected != null) onSelected();
+                            },
+                          );
+                        },
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text("Close"),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildPopupLocationField({
     required String label,
     required TextEditingController controller,
     required List<String> options,
     required VoidCallback? onTap,
+    required VoidCallback? onSelected,
   }) {
-    return Autocomplete<String>(
-      optionsBuilder: (TextEditingValue textEditingValue) {
-        if (textEditingValue.text.isEmpty) {
-          return options;
+    return GestureDetector(
+      onTap: () async {
+        if (onTap != null) onTap();
+        if (label.contains("End") && _startController.text.isEmpty) {
+          setState(() {
+            _message = "⚠️ Please select your start location first.";
+          });
+          return;
         }
-        return options.where((stop) => stop.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-      },
-      onSelected: (String selection) {
-        controller.text = selection;
+        await _showLocationDialog(
+          title: label,
+          options: options,
+          controller: controller,
+          onSelected: onSelected,
+        );
         if (label.contains("Start")) {
           // Clear end location if start changes
           _endController.clear();
           setState(() {});
+        } else {
+          setState(() {});
         }
       },
-      fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-        return TextField(
-          controller: textEditingController,
-          focusNode: focusNode,
+      child: AbsorbPointer(
+        child: TextField(
+          controller: controller,
           decoration: InputDecoration(
             labelText: label,
             border: OutlineInputBorder(),
-            suffixIcon: Icon(Icons.search),
           ),
-          readOnly: false,
-          onTap: onTap,
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -131,21 +221,87 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Bus Fare Search"),
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: <Widget>[
+            DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Text(
+                'Menu',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 24,
+                ),
+              ),
+            ),
+            ListTile(
+              leading: Icon(Icons.home),
+              title: Text('Home'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => BusSearchScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.search),
+              title: Text('Search Buses'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => BusNameSearchScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.attach_money),
+              title: Text('Bus Fare'),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => BusFareSearchScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.info),
+              title: Text('About'),
+              onTap: () {
+                Navigator.pop(context);
+                // Navigate to the About screen if needed
+              },
+            ),
+          ],
+        ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            _buildAutoCompleteField(
+            _buildPopupLocationField(
               label: "📍 Start Location",
               controller: _startController,
               options: _allFromStops,
-              onTap: () {
-                // No-op, but required for interface
+              onTap: null,
+              onSelected: () {
+                // Clear end location if start changes
+                _endController.clear();
+                setState(() {});
               },
             ),
             SizedBox(height: 10),
-            _buildAutoCompleteField(
+            _buildPopupLocationField(
               label: "🏁 End Location",
               controller: _endController,
               options: endOptions,
@@ -154,8 +310,10 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
                   setState(() {
                     _message = "⚠️ Please select your start location first.";
                   });
-                  FocusScope.of(context).requestFocus(FocusNode()); // Remove focus
                 }
+              },
+              onSelected: () {
+                setState(() {});
               },
             ),
             SizedBox(height: 20),
