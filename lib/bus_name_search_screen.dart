@@ -83,97 +83,177 @@ class _BusNameSearchScreenState extends State<BusNameSearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF6D9EFF), Color(0xFF4F8AFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Text("🚌 Search Buses by Name"),
+        elevation: 0,
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF6D9EFF), Color(0xFF4F8AFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: <Widget>[
+              UserAccountsDrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                ),
+                accountName: Text('Welcome!', style: TextStyle(fontWeight: FontWeight.bold)),
+                accountEmail: Text('Enjoy your ride'),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.directions_bus, color: Colors.indigo, size: 36),
                 ),
               ),
-            ),
-            ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => BusSearchScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.search),
-              title: Text('Search Buses'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.attach_money),
-              title: Text('Bus Fare'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => BusFareSearchScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.info),
-              title: Text('About'),
-              onTap: () {
-                Navigator.pop(context);
-                // Navigate to about screen
-              },
-            ),
-          ],
+              ListTile(
+                leading: Icon(Icons.home, color: Colors.white),
+                title: Text('Home', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => BusSearchScreen(),
+                    ),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.search, color: Colors.white),
+                title: Text('Search Buses', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.attach_money, color: Colors.white),
+                title: Text('Bus Fare', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => BusFareSearchScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.info, color: Colors.white),
+                title: Text('About', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Navigate to about screen
+                },
+              ),
+            ],
+          ),
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 32.0),
         child: Column(
           children: [
-            Autocomplete<String>(
-              optionsBuilder: (TextEditingValue textEditingValue) {
-                final input = textEditingValue.text;
-                if (input.isEmpty && _allBusNames.isNotEmpty) {
-                  return _allBusNames;
-                }
-                return _allBusNames.where((busName) =>
-                    busName.toLowerCase().contains(input.toLowerCase()));
-              },
-              onSelected: (String selection) {
-                _controller.text = selection;
-                _searchBuses(selection);
-              },
-              fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-                return TextField(
-                  controller: textEditingController,
-                  focusNode: focusNode,
-                  decoration: InputDecoration(
-                    labelText: 'Bus Name',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.search),
-                  ),
-                  onChanged: (value) {},
-                  onSubmitted: (value) => _searchBuses(value),
-                );
-              },
+            Material(
+              elevation: 0,
+              borderRadius: BorderRadius.circular(16),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 0.0),
+                child: Stack(
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black12,
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _controller,
+                        decoration: InputDecoration(
+                          hintText: 'Search bus by name...',
+                          labelText: 'Bus Name',
+                          labelStyle: TextStyle(color: Colors.indigo[700], fontWeight: FontWeight.w600),
+                          filled: true,
+                          fillColor: Colors.white,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: Icon(Icons.search, color: Colors.indigo[400]),
+                          contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 18),
+                        ),
+                        style: TextStyle(fontSize: 18),
+                        onChanged: (value) {
+                          _searchBuses(value);
+                          setState(() {});
+                        },
+                        onSubmitted: (value) => _searchBuses(value),
+                      ),
+                    ),
+                    if (_controller.text.isNotEmpty &&
+                        _allBusNames.any((name) => name.toLowerCase().contains(_controller.text.toLowerCase())))
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        top: 68,
+                        child: Material(
+                          elevation: 8,
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.transparent,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black12,
+                                  blurRadius: 8,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ListView(
+                              shrinkWrap: true,
+                              padding: EdgeInsets.zero,
+                              children: _allBusNames
+                                  .where((name) => name.toLowerCase().contains(_controller.text.toLowerCase()))
+                                  .take(5)
+                                  .map((suggestion) => ListTile(
+                                        title: Text(suggestion, style: TextStyle(fontWeight: FontWeight.w500)),
+                                        hoverColor: Colors.indigo[50],
+                                        onTap: () {
+                                          _controller.text = suggestion;
+                                          _searchBuses(suggestion);
+                                          FocusScope.of(context).unfocus();
+                                          setState(() {});
+                                        },
+                                      ))
+                                  .toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
-            SizedBox(height: 10),
+            SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: () {
                 _searchBuses(_controller.text);
@@ -181,17 +261,18 @@ class _BusNameSearchScreenState extends State<BusNameSearchScreen> {
               icon: Icon(Icons.search),
               label: Text('Find Bus'),
               style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                textStyle: TextStyle(fontSize: 18),
+                padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                textStyle: TextStyle(fontSize: 20),
+                elevation: 4,
               ),
             ),
-            SizedBox(height: 20),
+            SizedBox(height: 28),
             _isLoading
                 ? Center(child: CircularProgressIndicator())
                 : _message.isNotEmpty
                     ? Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Text(_message, style: TextStyle(color: Colors.red, fontSize: 16)),
+                        child: Text(_message, style: TextStyle(color: Colors.red, fontSize: 18)),
                       )
                     : Expanded(
                         child: ListView.builder(
@@ -199,24 +280,37 @@ class _BusNameSearchScreenState extends State<BusNameSearchScreen> {
                           itemBuilder: (context, index) {
                             var bus = _results[index];
                             return Card(
-                              margin: EdgeInsets.symmetric(vertical: 8),
+                              margin: EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(18),
+                              ),
+                              elevation: 6,
                               child: ListTile(
-                                leading: bus['image'] != null &&
-                                        bus['image'] is String &&
-                                        bus['image'].isNotEmpty
-                                    ? Image.network(
-                                        bus['image'],
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.cover,
-                                      )
-                                    : Icon(Icons.directions_bus, color: Colors.blue, size: 50),
+                                contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 18),
+                                leading: ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: bus['image'] != null &&
+                                          bus['image'] is String &&
+                                          bus['image'].isNotEmpty
+                                      ? Image.network(
+                                          bus['image'],
+                                          width: 56,
+                                          height: 56,
+                                          fit: BoxFit.cover,
+                                        )
+                                      : Container(
+                                          width: 56,
+                                          height: 56,
+                                          color: Colors.indigo[50],
+                                          child: Icon(Icons.directions_bus, color: Colors.indigo, size: 36),
+                                        ),
+                                ),
                                 title: Text(
                                   bus['english'] ?? '',
-                                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.indigo[900]),
                                 ),
-                                subtitle: Text(bus['service_type'] ?? ''),
-                                trailing: Icon(Icons.arrow_forward_ios),
+                                subtitle: Text(bus['service_type'] ?? '', style: TextStyle(color: Colors.indigo[700])),
+                                trailing: Icon(Icons.arrow_forward_ios, color: Colors.indigo[400]),
                                 onTap: () {
                                   Navigator.push(
                                     context,

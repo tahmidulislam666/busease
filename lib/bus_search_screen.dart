@@ -18,6 +18,7 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
   List<Map<String, dynamic>> _busResults = [];
   bool _isLoading = false;
   String _message = "";
+  bool _isLoadingStops = true; // Add this
 
   @override
   void initState() {
@@ -40,9 +41,13 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
 
       setState(() {
         _allStops = uniqueStops.toList()..sort();
+        _isLoadingStops = false; // Set loading to false after loading
       });
     } catch (e) {
       print("❌ Error loading stops: $e");
+      setState(() {
+        _isLoadingStops = false;
+      });
     }
   }
 
@@ -85,7 +90,17 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF6D9EFF), Color(0xFF4F8AFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Text("🚌 Bus Search"),
         leading: Builder(
           builder: (context) => IconButton(
@@ -93,130 +108,159 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
+        elevation: 0,
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF6D9EFF), Color(0xFF4F8AFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: <Widget>[
+              UserAccountsDrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                ),
+                accountName: Text('Welcome!', style: TextStyle(fontWeight: FontWeight.bold)),
+                accountEmail: Text('Enjoy your ride'),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.directions_bus, color: Colors.indigo, size: 36),
                 ),
               ),
-            ),
-            ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Home'),
-              onTap: () {
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.search),
-              title: Text('Search Buses'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => BusNameSearchScreen()), // Navigate to BusNameSearchScreen
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.attach_money),
-              title: Text('Bus Fare'),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => BusFareSearchScreen()), // Navigate to BusFareSearchScreen
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.info),
-              title: Text('About'),
-              onTap: () {
-                Navigator.pop(context);
-                // Navigate to the About screen
-              },
-            ),
-          ],
+              ListTile(
+                leading: Icon(Icons.home, color: Colors.white),
+                title: Text('Home', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.search, color: Colors.white),
+                title: Text('Search Buses', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => BusNameSearchScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.attach_money, color: Colors.white),
+                title: Text('Bus Fare', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => BusFareSearchScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.info, color: Colors.white),
+                title: Text('About', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Navigate to the About screen
+                },
+              ),
+            ],
+          ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _buildAutoCompleteField("📍 Start Location", _startController),
-            SizedBox(height: 10),
-            _buildAutoCompleteField("🏁 End Location", _endController),
-            SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: searchBuses,
-              icon: Icon(Icons.search),
-              label: Text("Find Bus"),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                textStyle: TextStyle(fontSize: 18),
-              ),
-            ),
-            SizedBox(height: 20),
-            _isLoading
-                ? Center(child: CircularProgressIndicator())
-                : _message.isNotEmpty
-                    ? Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: Text(_message, style: TextStyle(color: Colors.red, fontSize: 16)),
-                      )
-                    : Expanded(
-                        child: ListView.builder(
-                          itemCount: _busResults.length,
-                          itemBuilder: (context, index) {
-                            var bus = _busResults[index];
-                            List<String> stops = bus['stops'].split(',');
-
-                            return Card(
-                              margin: EdgeInsets.symmetric(vertical: 8),
-                              child: ListTile(
-                                leading: bus['image'] != null && bus['image'].isNotEmpty
-                                    ? Image.network(bus['image'], width: 50, height: 50, fit: BoxFit.cover)
-                                    : Icon(Icons.directions_bus, color: Colors.blue, size: 50),
-                                title: Text(bus['bus_name'], style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    SizedBox(height: 5),
-                                    Row(
-                                      children: [
-                                        Text(stops.first, style: TextStyle(fontSize: 16)),
-                                        SizedBox(width: 5),
-                                        Icon(Icons.swap_horiz, size: 16),
-                                        SizedBox(width: 5),
-                                        Text(stops.last, style: TextStyle(fontSize: 16)),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                                trailing: Icon(Icons.arrow_forward_ios),
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => BusDetailsScreen(bus: bus),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 32.0),
+          child: _isLoadingStops
+              ? Center(child: CircularProgressIndicator())
+              : Column(
+                  children: [
+                    // Always show both fields
+                    _buildAutoCompleteField("📍 Start Location", _startController),
+                    SizedBox(height: 16),
+                    _buildAutoCompleteField("🏁 End Location", _endController),
+                    SizedBox(height: 28),
+                    ElevatedButton.icon(
+                      onPressed: searchBuses,
+                      icon: Icon(Icons.search),
+                      label: Text("Find Bus"),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        textStyle: TextStyle(fontSize: 20),
+                        elevation: 4,
                       ),
-          ],
+                    ),
+                    SizedBox(height: 28),
+                    _isLoading
+                        ? Center(child: CircularProgressIndicator())
+                        : _message.isNotEmpty
+                            ? Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Text(_message, style: TextStyle(color: Colors.red, fontSize: 18)),
+                              )
+                            : Expanded(
+                                child: ListView.builder(
+                                  itemCount: _busResults.length,
+                                  itemBuilder: (context, index) {
+                                    var bus = _busResults[index];
+                                    List<String> stops = bus['stops'].split(',');
+
+                                    return Card(
+                                      margin: EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      elevation: 6,
+                                      child: ListTile(
+                                        contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 18),
+                                        leading: ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: bus['image'] != null && bus['image'].isNotEmpty
+                                              ? Image.network(bus['image'], width: 56, height: 56, fit: BoxFit.cover)
+                                              : Container(
+                                                  width: 56,
+                                                  height: 56,
+                                                  color: Colors.indigo[50],
+                                                  child: Icon(Icons.directions_bus, color: Colors.indigo, size: 36),
+                                                ),
+                                        ),
+                                        title: Text(bus['bus_name'],
+                                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.indigo[900])),
+                                        subtitle: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            SizedBox(height: 6),
+                                            Row(
+                                              children: [
+                                                Text(stops.first, style: TextStyle(fontSize: 16, color: Colors.indigo[700])),
+                                                SizedBox(width: 5),
+                                                Icon(Icons.swap_horiz, size: 18, color: Colors.indigo[400]),
+                                                SizedBox(width: 5),
+                                                Text(stops.last, style: TextStyle(fontSize: 16, color: Colors.indigo[700])),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                        trailing: Icon(Icons.arrow_forward_ios, color: Colors.indigo[400]),
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => BusDetailsScreen(bus: bus),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                  ],
+                ),
         ),
       ),
     );
@@ -227,7 +271,7 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
     return Autocomplete<String>(
       optionsBuilder: (TextEditingValue textEditingValue) {
         if (textEditingValue.text.isEmpty) {
-          return const Iterable<String>.empty();
+          return _allStops;
         }
         return _allStops.where((stop) => stop.toLowerCase().contains(textEditingValue.text.toLowerCase()));
       },
@@ -235,13 +279,35 @@ class _BusSearchScreenState extends State<BusSearchScreen> {
         controller.text = selection;
       },
       fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
-        return TextField(
-          controller: textEditingController,
-          focusNode: focusNode,
-          decoration: InputDecoration(
-            labelText: label,
-            border: OutlineInputBorder(),
-            suffixIcon: Icon(Icons.search),
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: textEditingController,
+            focusNode: focusNode,
+            decoration: InputDecoration(
+              hintText: 'Type to search...',
+              labelText: label,
+              labelStyle: TextStyle(color: Colors.indigo[700], fontWeight: FontWeight.w600),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              prefixIcon: Icon(Icons.search, color: Colors.indigo[400]),
+              contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 18),
+            ),
+            style: TextStyle(fontSize: 18),
           ),
         );
       },

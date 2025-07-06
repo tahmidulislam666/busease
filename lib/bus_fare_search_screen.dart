@@ -18,6 +18,7 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
   Map<String, Set<String>> _fromToMap = {};
   String _message = "";
   List<Map<String, dynamic>> _searchResults = [];
+  bool _isLoadingStops = true;
 
   @override
   void initState() {
@@ -48,9 +49,12 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
       setState(() {
         _allFromStops = uniqueFrom.toList()..sort();
         _fromToMap = fromToMap;
+        _isLoadingStops = false;
       });
     } catch (e) {
-      print("❌ Error loading stops: $e");
+      setState(() {
+        _isLoadingStops = false;
+      });
     }
   }
 
@@ -81,7 +85,6 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
         _message = "❌ Error loading fare data.";
         _searchResults = [];
       });
-      print("❌ Error: $e");
     }
   }
 
@@ -100,10 +103,21 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
         return StatefulBuilder(
           builder: (context, setState) {
             return Dialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               child: Container(
                 width: double.infinity,
                 padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black12,
+                      blurRadius: 12,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -112,28 +126,34 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.blueGrey[900]),
                     ),
                     SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Icon(Icons.search, size: 28),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            autofocus: true,
-                            decoration: InputDecoration(
-                              hintText: '',
-                              border: InputBorder.none,
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.search, size: 28, color: Colors.indigo[400]),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: TextField(
+                              autofocus: true,
+                              decoration: InputDecoration(
+                                hintText: 'Type to search...',
+                                border: InputBorder.none,
+                              ),
+                              onChanged: (value) {
+                                setState(() {
+                                  searchText = value;
+                                  filteredOptions = options
+                                      .where((stop) => stop.toLowerCase().contains(searchText.toLowerCase()))
+                                      .toList();
+                                });
+                              },
                             ),
-                            onChanged: (value) {
-                              setState(() {
-                                searchText = value;
-                                filteredOptions = options
-                                    .where((stop) => stop.toLowerCase().contains(searchText.toLowerCase()))
-                                    .toList();
-                              });
-                            },
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     Divider(),
                     Expanded(
@@ -144,7 +164,8 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
                         itemBuilder: (context, index) {
                           final stop = filteredOptions[index];
                           return ListTile(
-                            title: Text(stop),
+                            title: Text(stop, style: TextStyle(fontWeight: FontWeight.w500)),
+                            hoverColor: Colors.indigo[50],
                             onTap: () {
                               controller.text = stop;
                               Navigator.of(context).pop();
@@ -191,7 +212,6 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
           onSelected: onSelected,
         );
         if (label.contains("Start")) {
-          // Clear end location if start changes
           _endController.clear();
           setState(() {});
         } else {
@@ -199,11 +219,33 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
         }
       },
       child: AbsorbPointer(
-        child: TextField(
-          controller: controller,
-          decoration: InputDecoration(
-            labelText: label,
-            border: OutlineInputBorder(),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 12,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+          child: TextField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: label,
+              labelStyle: TextStyle(color: Colors.indigo[700], fontWeight: FontWeight.w600),
+              filled: true,
+              fillColor: Colors.white,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              prefixIcon: Icon(Icons.search, color: Colors.indigo[400]),
+              contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 18),
+            ),
+            style: TextStyle(fontSize: 18),
           ),
         ),
       ),
@@ -212,7 +254,6 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // For end location, show only To stops for selected From
     List<String> endOptions = [];
     if (_fromToMap.containsKey(_startController.text)) {
       endOptions = _fromToMap[_startController.text]!.toList()..sort();
@@ -220,6 +261,15 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF6D9EFF), Color(0xFF4F8AFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         title: Text("Bus Fare Search"),
         leading: Builder(
           builder: (context) => IconButton(
@@ -227,133 +277,255 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
             onPressed: () => Scaffold.of(context).openDrawer(),
           ),
         ),
+        elevation: 0,
       ),
       drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-              child: Text(
-                'Menu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
+        child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF6D9EFF), Color(0xFF4F8AFF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: ListView(
+            padding: EdgeInsets.zero,
+            children: <Widget>[
+              UserAccountsDrawerHeader(
+                decoration: BoxDecoration(
+                  color: Colors.transparent,
+                ),
+                accountName: Text('Welcome!', style: TextStyle(fontWeight: FontWeight.bold)),
+                accountEmail: Text('Enjoy your ride'),
+                currentAccountPicture: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: Icon(Icons.directions_bus, color: Colors.indigo, size: 36),
                 ),
               ),
-            ),
-            ListTile(
-              leading: Icon(Icons.home),
-              title: Text('Home'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => BusSearchScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.search),
-              title: Text('Search Buses'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => BusNameSearchScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.attach_money),
-              title: Text('Bus Fare'),
-              onTap: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => BusFareSearchScreen()),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.info),
-              title: Text('About'),
-              onTap: () {
-                Navigator.pop(context);
-                // Navigate to the About screen if needed
-              },
-            ),
-          ],
+              ListTile(
+                leading: Icon(Icons.home, color: Colors.white),
+                title: Text('Home', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => BusSearchScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.search, color: Colors.white),
+                title: Text('Search Buses', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => BusNameSearchScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.attach_money, color: Colors.white),
+                title: Text('Bus Fare', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => BusFareSearchScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.info, color: Colors.white),
+                title: Text('About', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Navigate to the About screen if needed
+                },
+              ),
+            ],
+          ),
         ),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            _buildPopupLocationField(
-              label: "📍 Start Location",
-              controller: _startController,
-              options: _allFromStops,
-              onTap: null,
-              onSelected: () {
-                // Clear end location if start changes
-                _endController.clear();
-                setState(() {});
-              },
-            ),
-            SizedBox(height: 10),
-            _buildPopupLocationField(
-              label: "🏁 End Location",
-              controller: _endController,
-              options: endOptions,
-              onTap: () {
-                if (_startController.text.isEmpty) {
-                  setState(() {
-                    _message = "⚠️ Please select your start location first.";
-                  });
-                }
-              },
-              onSelected: () {
-                setState(() {});
-              },
-            ),
-            SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: _searchFare,
-              icon: Icon(Icons.search),
-              label: Text("Search Fare"),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                textStyle: TextStyle(fontSize: 18),
-              ),
-            ),
-            SizedBox(height: 20),
-            _message.isNotEmpty
-                ? Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(_message, style: TextStyle(color: Colors.red, fontSize: 16)),
-                  )
-                : Expanded(
-                    child: ListView.builder(
-                      itemCount: _searchResults.length,
-                      itemBuilder: (context, index) {
-                        final result = _searchResults[index];
-                        return Card(
-                          margin: EdgeInsets.symmetric(vertical: 8),
-                          child: ListTile(
-                            title: Text(
-                              "${result['From']} ➡️ ${result['To']}",
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                            ),
-                            subtitle: Text(
-                              "Route: ${result['Route']}\nFare: ${result['Fare']}, Distance: ${result['Distance']}",
-                            ),
-                          ),
-                        );
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 32.0),
+        child: _isLoadingStops
+            ? Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+                child: Column(
+                  children: [
+                    _buildPopupLocationField(
+                      label: "📍 Start Location",
+                      controller: _startController,
+                      options: _allFromStops,
+                      onTap: null,
+                      onSelected: () {
+                        _endController.clear();
+                        setState(() {});
                       },
                     ),
-                  ),
-          ],
-        ),
+                    SizedBox(height: 16),
+                    AbsorbPointer(
+                      absorbing: _startController.text.isEmpty,
+                      child: Opacity(
+                        opacity: _startController.text.isEmpty ? 0.5 : 1.0,
+                        child: _buildPopupLocationField(
+                          label: "🏁 End Location",
+                          controller: _endController,
+                          options: endOptions,
+                          onTap: () {
+                            if (_startController.text.isEmpty) {
+                              setState(() {
+                                _message = "⚠️ Please select your start location first.";
+                              });
+                            }
+                          },
+                          onSelected: () {
+                            setState(() {});
+                          },
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 28),
+                    ElevatedButton.icon(
+                      onPressed: (_startController.text.isEmpty || _endController.text.isEmpty)
+                          ? null
+                          : _searchFare,
+                      icon: Icon(Icons.search),
+                      label: Text("Search Fare"),
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        textStyle: TextStyle(fontSize: 20),
+                        elevation: 4,
+                      ),
+                    ),
+                    SizedBox(height: 28),
+                    _message.isNotEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(_message, style: TextStyle(color: Colors.red, fontSize: 18)),
+                          )
+                        : _searchResults.isEmpty
+                            ? Container()
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                physics: NeverScrollableScrollPhysics(),
+                                itemCount: _searchResults.length,
+                                itemBuilder: (context, index) {
+                                  final result = _searchResults[index];
+                                  return Container(
+                                    margin: EdgeInsets.symmetric(vertical: 10, horizontal: 2),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [Color(0xFF6D9EFF), Color(0xFFB2CFFF)],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      borderRadius: BorderRadius.circular(22),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.blue.withOpacity(0.18),
+                                          blurRadius: 18,
+                                          offset: Offset(0, 8),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 22),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 28,
+                                            backgroundColor: Colors.white,
+                                            child: Icon(Icons.attach_money, color: Colors.indigo[700], size: 32),
+                                          ),
+                                          SizedBox(width: 16),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      "${result['From']}",
+                                                      style: TextStyle(
+                                                        fontSize: 22,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.indigo[900],
+                                                        letterSpacing: 0.5,
+                                                      ),
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Icon(Icons.arrow_forward_rounded, color: Colors.indigo[700], size: 26),
+                                                    SizedBox(width: 8),
+                                                    Text(
+                                                      "${result['To']}",
+                                                      style: TextStyle(
+                                                        fontSize: 22,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.indigo[900],
+                                                        letterSpacing: 0.5,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                SizedBox(height: 12),
+                                                Wrap(
+                                                  spacing: 10,
+                                                  runSpacing: 8,
+                                                  children: [
+                                                    Chip(
+                                                      avatar: Icon(Icons.alt_route, color: Colors.white, size: 18),
+                                                      label: Text(
+                                                        "Route: ${result['Route']}",
+                                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                                                        overflow: TextOverflow.ellipsis,
+                                                        maxLines: 2,
+                                                      ),
+                                                      backgroundColor: Colors.indigo[400],
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(12),
+                                                      ),
+                                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                    ),
+                                                    Chip(
+                                                      avatar: Icon(Icons.attach_money, color: Colors.white, size: 18),
+                                                      label: Text(
+                                                        "Fare: ${result['Fare']}",
+                                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                      backgroundColor: Colors.green[400],
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(12),
+                                                      ),
+                                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                    ),
+                                                    Chip(
+                                                      avatar: Icon(Icons.social_distance, color: Colors.white, size: 18),
+                                                      label: Text(
+                                                        "Distance: ${result['Distance']}",
+                                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                      backgroundColor: Colors.deepPurple[400],
+                                                      shape: RoundedRectangleBorder(
+                                                        borderRadius: BorderRadius.circular(12),
+                                                      ),
+                                                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                  ],
+                ),
+              ),
       ),
     );
   }
