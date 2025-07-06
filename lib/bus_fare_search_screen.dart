@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class BusFareSearchScreen extends StatefulWidget {
+  const BusFareSearchScreen({super.key});
+
   @override
   _BusFareSearchScreenState createState() => _BusFareSearchScreenState();
 }
@@ -77,8 +79,9 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
   Widget _buildAutoCompleteField(String label, TextEditingController controller) {
     return Autocomplete<String>(
       optionsBuilder: (TextEditingValue textEditingValue) {
+        // Show all stops if field is focused and empty, otherwise filter
         if (textEditingValue.text.isEmpty) {
-          return const Iterable<String>.empty();
+          return _allStops;
         }
         return _allStops.where((stop) => stop.toLowerCase().contains(textEditingValue.text.toLowerCase()));
       },
@@ -103,7 +106,7 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("💰 Bus Fare Search"),
+        title: Text("Bus Fare Search"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

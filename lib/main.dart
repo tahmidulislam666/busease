@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'bus_search_screen.dart';
 import 'bus_name_search_screen.dart';
-import 'load_json_to_db.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await insertBusDataFromJson();  // Load JSON data into SQLite
+  // Removed: await insertBusDataFromJson();  // Remove this line
 
   runApp(MyApp());
 }
