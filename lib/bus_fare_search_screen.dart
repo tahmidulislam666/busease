@@ -12,7 +12,8 @@ class BusFareSearchScreen extends StatefulWidget {
 class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
   final TextEditingController _startController = TextEditingController();
   final TextEditingController _endController = TextEditingController();
-  List<String> _allStops = [];
+  List<String> _allFromStops = [];
+  Map<String, Set<String>> _fromToMap = {};
   String _message = "";
   List<Map<String, dynamic>> _searchResults = [];
 
@@ -27,18 +28,24 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
       final String jsonString = await rootBundle.loadString('assets/kotovara_full_data.json');
       final List<dynamic> data = json.decode(jsonString);
 
-      Set<String> uniqueStops = {};
+      Set<String> uniqueFrom = {};
+      Map<String, Set<String>> fromToMap = {};
+
       for (var route in data) {
-        if (route['From'] != null) {
-          uniqueStops.add(route['From']);
-        }
-        if (route['To'] != null) {
-          uniqueStops.add(route['To']);
+        final from = route['From'];
+        final to = route['To'];
+        if (from != null) {
+          uniqueFrom.add(from);
+          fromToMap.putIfAbsent(from, () => <String>{});
+          if (to != null) {
+            fromToMap[from]!.add(to);
+          }
         }
       }
 
       setState(() {
-        _allStops = uniqueStops.toList()..sort();
+        _allFromStops = uniqueFrom.toList()..sort();
+        _fromToMap = fromToMap;
       });
     } catch (e) {
       print("❌ Error loading stops: $e");
@@ -59,8 +66,8 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
       final List<dynamic> data = json.decode(jsonString);
 
       final results = data.where((entry) {
-        return entry['From'].contains(_startController.text) &&
-            entry['To'].contains(_endController.text);
+        return entry['From'] == _startController.text &&
+            entry['To'] == _endController.text;
       }).toList();
 
       setState(() {
@@ -76,17 +83,26 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
     }
   }
 
-  Widget _buildAutoCompleteField(String label, TextEditingController controller) {
+  Widget _buildAutoCompleteField({
+    required String label,
+    required TextEditingController controller,
+    required List<String> options,
+    required VoidCallback? onTap,
+  }) {
     return Autocomplete<String>(
       optionsBuilder: (TextEditingValue textEditingValue) {
-        // Show all stops if field is focused and empty, otherwise filter
         if (textEditingValue.text.isEmpty) {
-          return _allStops;
+          return options;
         }
-        return _allStops.where((stop) => stop.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+        return options.where((stop) => stop.toLowerCase().contains(textEditingValue.text.toLowerCase()));
       },
       onSelected: (String selection) {
         controller.text = selection;
+        if (label.contains("Start")) {
+          // Clear end location if start changes
+          _endController.clear();
+          setState(() {});
+        }
       },
       fieldViewBuilder: (context, textEditingController, focusNode, onFieldSubmitted) {
         return TextField(
@@ -97,6 +113,8 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
             border: OutlineInputBorder(),
             suffixIcon: Icon(Icons.search),
           ),
+          readOnly: false,
+          onTap: onTap,
         );
       },
     );
@@ -104,6 +122,12 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // For end location, show only To stops for selected From
+    List<String> endOptions = [];
+    if (_fromToMap.containsKey(_startController.text)) {
+      endOptions = _fromToMap[_startController.text]!.toList()..sort();
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text("Bus Fare Search"),
@@ -112,9 +136,28 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            _buildAutoCompleteField("📍 Start Location", _startController),
+            _buildAutoCompleteField(
+              label: "📍 Start Location",
+              controller: _startController,
+              options: _allFromStops,
+              onTap: () {
+                // No-op, but required for interface
+              },
+            ),
             SizedBox(height: 10),
-            _buildAutoCompleteField("🏁 End Location", _endController),
+            _buildAutoCompleteField(
+              label: "🏁 End Location",
+              controller: _endController,
+              options: endOptions,
+              onTap: () {
+                if (_startController.text.isEmpty) {
+                  setState(() {
+                    _message = "⚠️ Please select your start location first.";
+                  });
+                  FocusScope.of(context).requestFocus(FocusNode()); // Remove focus
+                }
+              },
+            ),
             SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: _searchFare,

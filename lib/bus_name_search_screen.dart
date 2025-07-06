@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart' show rootBundle;
-import 'bus_details_screen.dart';
 import 'bus_search_screen.dart';
 import 'bus_fare_search_screen.dart';
 import 'details_bus.dart';

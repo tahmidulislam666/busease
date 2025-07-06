@@ -4,8 +4,7 @@ import 'bus_name_search_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Removed: await insertBusDataFromJson();  // Remove this line
-
+  // No database or JSON insertion here, just run the app.
   runApp(MyApp());
 }
 
