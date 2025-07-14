@@ -1,14 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'dart:ui';
 
-class BusDetailsScreen extends StatelessWidget {
+class BusDetailsScreen extends StatefulWidget {
   final Map<String, dynamic> bus;
 
   const BusDetailsScreen({super.key, required this.bus});
 
   @override
+  State<BusDetailsScreen> createState() => _BusDetailsScreenState();
+}
+
+class _BusDetailsScreenState extends State<BusDetailsScreen> {
+  bool _isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFavorite();
+  }
+
+  Future<void> _checkFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    final favs = prefs.getStringList('favorite_buses') ?? [];
+    setState(() {
+      _isFavorite = favs.any((b) {
+        final map = json.decode(b);
+        return map['bus_name'] == widget.bus['bus_name'];
+      });
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    final favs = prefs.getStringList('favorite_buses') ?? [];
+    final busJson = json.encode(widget.bus);
+    bool exists = favs.any((b) {
+      final map = json.decode(b);
+      return map['bus_name'] == widget.bus['bus_name'];
+    });
+    if (exists) {
+      favs.removeWhere((b) {
+        final map = json.decode(b);
+        return map['bus_name'] == widget.bus['bus_name'];
+      });
+    } else {
+      favs.add(busJson);
+    }
+    await prefs.setStringList('favorite_buses', favs);
+    setState(() {
+      _isFavorite = !exists;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    List<String> stops = List<String>.from(bus['stops']?.split(',')?.map((s) => s.trim()) ?? []);
+    List<String> stops = List<String>.from(widget.bus['stops']?.split(',')?.map((s) => s.trim()) ?? []);
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -18,7 +66,7 @@ class BusDetailsScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
-          bus['bus_name'] ?? 'Bus Details',
+          widget.bus['bus_name'] ?? 'Bus Details',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -29,12 +77,15 @@ class BusDetailsScreen extends StatelessWidget {
         centerTitle: true,
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        backgroundColor: Colors.white.withOpacity(0.85),
+        onPressed: _toggleFavorite,
+        backgroundColor: _isFavorite ? Colors.yellow[700] : Colors.white.withOpacity(0.85),
         elevation: 8,
-        icon: const Icon(Icons.star, color: Color(0xFF4F8AFF)),
-        label: const Text(
-          "Favorite",
+        icon: Icon(
+          _isFavorite ? Icons.star : Icons.star_border,
+          color: Color(0xFF4F8AFF),
+        ),
+        label: Text(
+          _isFavorite ? "Favorited" : "Favorite",
           style: TextStyle(
             color: Color(0xFF4F8AFF),
             fontWeight: FontWeight.bold,
@@ -79,12 +130,12 @@ class BusDetailsScreen extends StatelessWidget {
                           child: Column(
                             children: [
                               Hero(
-                                tag: bus['image'] ?? bus['bus_name'] ?? '',
+                                tag: widget.bus['image'] ?? widget.bus['bus_name'] ?? '',
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(22),
-                                  child: bus['image'] != null && bus['image'].isNotEmpty
+                                  child: widget.bus['image'] != null && widget.bus['image'].isNotEmpty
                                       ? Image.network(
-                                          bus['image'],
+                                          widget.bus['image'],
                                           height: 180,
                                           width: double.infinity,
                                           fit: BoxFit.cover,
@@ -99,7 +150,7 @@ class BusDetailsScreen extends StatelessWidget {
                               ),
                               const SizedBox(height: 24),
                               Text(
-                                bus['bus_name'] ?? bus['english'] ?? '',
+                                widget.bus['bus_name'] ?? widget.bus['english'] ?? '',
                                 style: const TextStyle(
                                   fontSize: 30,
                                   fontWeight: FontWeight.bold,
@@ -123,8 +174,8 @@ class BusDetailsScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
-                                  bus['service_type'] != null
-                                      ? bus['service_type'].toString().toUpperCase()
+                                  widget.bus['service_type'] != null
+                                      ? widget.bus['service_type'].toString().toUpperCase()
                                       : 'N/A',
                                   style: const TextStyle(
                                     fontSize: 16,
@@ -248,7 +299,7 @@ class BusDetailsScreen extends StatelessWidget {
                                             ],
                                           ),
                                           child: ListTile(
-                                            leading: (bus['service_type'] != null && (bus['service_type'] as String).trim().isNotEmpty)
+                                            leading: (widget.bus['service_type'] != null && (widget.bus['service_type'] as String).trim().isNotEmpty)
                                                 ? CircleAvatar(
                                                     backgroundColor: Colors.white,
                                                     child: Icon(Icons.directions_bus, color: Color(0xFF4F8AFF)),

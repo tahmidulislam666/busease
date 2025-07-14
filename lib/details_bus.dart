@@ -1,18 +1,66 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'dart:ui';
 
-class DetailsBus extends StatelessWidget {
+class DetailsBus extends StatefulWidget {
   final Map<String, dynamic> bus;
 
   const DetailsBus({Key? key, required this.bus}) : super(key: key);
 
   @override
+  State<DetailsBus> createState() => _DetailsBusState();
+}
+
+class _DetailsBusState extends State<DetailsBus> {
+  bool _isFavorite = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkFavorite();
+  }
+
+  Future<void> _checkFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    final favs = prefs.getStringList('favorite_buses') ?? [];
+    setState(() {
+      _isFavorite = favs.any((b) {
+        final map = json.decode(b);
+        return map['english'] == widget.bus['english'];
+      });
+    });
+  }
+
+  Future<void> _toggleFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    final favs = prefs.getStringList('favorite_buses') ?? [];
+    final busJson = json.encode(widget.bus);
+    bool exists = favs.any((b) {
+      final map = json.decode(b);
+      return map['english'] == widget.bus['english'];
+    });
+    if (exists) {
+      favs.removeWhere((b) {
+        final map = json.decode(b);
+        return map['english'] == widget.bus['english'];
+      });
+    } else {
+      favs.add(busJson);
+    }
+    await prefs.setStringList('favorite_buses', favs);
+    setState(() {
+      _isFavorite = !exists;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     List<String> stops = [];
-    if (bus['stops'] != null && bus['stops'] is String) {
-      stops = List<String>.from((bus['stops'] as String).split(',').map((s) => s.trim()));
-    } else if (bus['routes'] != null && bus['routes'] is List) {
-      stops = List<String>.from(bus['routes'].map((s) => s.toString()));
+    if (widget.bus['stops'] != null && widget.bus['stops'] is String) {
+      stops = List<String>.from((widget.bus['stops'] as String).split(',').map((s) => s.trim()));
+    } else if (widget.bus['routes'] != null && widget.bus['routes'] is List) {
+      stops = List<String>.from(widget.bus['routes'].map((s) => s.toString()));
     }
 
     return Scaffold(
@@ -23,7 +71,7 @@ class DetailsBus extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
-          bus['bus_name'] ?? bus['english'] ?? 'Bus Details',
+          widget.bus['bus_name'] ?? widget.bus['english'] ?? 'Bus Details',
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -34,12 +82,15 @@ class DetailsBus extends StatelessWidget {
         centerTitle: true,
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        backgroundColor: Colors.white.withOpacity(0.85),
+        onPressed: _toggleFavorite,
+        backgroundColor: _isFavorite ? Colors.yellow[700] : Colors.white.withOpacity(0.85),
         elevation: 8,
-        icon: const Icon(Icons.star, color: Color(0xFF4F8AFF)),
-        label: const Text(
-          "Favorite",
+        icon: Icon(
+          _isFavorite ? Icons.star : Icons.star_border,
+          color: Color(0xFF4F8AFF),
+        ),
+        label: Text(
+          _isFavorite ? "Favorited" : "Favorite",
           style: TextStyle(
             color: Color(0xFF4F8AFF),
             fontWeight: FontWeight.bold,
@@ -84,12 +135,12 @@ class DetailsBus extends StatelessWidget {
                           child: Column(
                             children: [
                               Hero(
-                                tag: bus['image'] ?? bus['bus_name'] ?? '',
+                                tag: widget.bus['image'] ?? widget.bus['bus_name'] ?? '',
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(22),
-                                  child: bus['image'] != null && (bus['image'] as String).isNotEmpty
+                                  child: widget.bus['image'] != null && (widget.bus['image'] as String).isNotEmpty
                                       ? Image.network(
-                                          bus['image'],
+                                          widget.bus['image'],
                                           height: 180,
                                           width: double.infinity,
                                           fit: BoxFit.cover,
@@ -104,7 +155,7 @@ class DetailsBus extends StatelessWidget {
                               ),
                               const SizedBox(height: 24),
                               Text(
-                                bus['bus_name'] ?? bus['english'] ?? '',
+                                widget.bus['bus_name'] ?? widget.bus['english'] ?? '',
                                 style: const TextStyle(
                                   fontSize: 30,
                                   fontWeight: FontWeight.bold,
@@ -128,8 +179,8 @@ class DetailsBus extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Text(
-                                  bus['service_type'] != null
-                                      ? bus['service_type'].toString().toUpperCase()
+                                  widget.bus['service_type'] != null
+                                      ? widget.bus['service_type'].toString().toUpperCase()
                                       : 'N/A',
                                   style: const TextStyle(
                                     fontSize: 16,
@@ -253,7 +304,7 @@ class DetailsBus extends StatelessWidget {
                                             ],
                                           ),
                                           child: ListTile(
-                                            leading: (bus['service_type'] != null && (bus['service_type'] as String).trim().isNotEmpty)
+                                            leading: (widget.bus['service_type'] != null && (widget.bus['service_type'] as String).trim().isNotEmpty)
                                                 ? CircleAvatar(
                                                     backgroundColor: Colors.white,
                                                     child: Icon(Icons.directions_bus, color: Color(0xFF4F8AFF)),

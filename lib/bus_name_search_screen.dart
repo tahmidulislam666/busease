@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'bus_search_screen.dart';
 import 'bus_fare_search_screen.dart';
 import 'details_bus.dart';
+import 'favorite_buses_screen.dart';
 
 class BusNameSearchScreen extends StatefulWidget {
   const BusNameSearchScreen({super.key});
@@ -150,10 +151,12 @@ class _BusNameSearchScreenState extends State<BusNameSearchScreen> {
               ),
               ListTile(
                 leading: Icon(Icons.info, color: Colors.white),
-                title: Text('About', style: TextStyle(color: Colors.white)),
+                title: Text('Favorite', style: TextStyle(color: Colors.white)),
                 onTap: () {
-                  Navigator.pop(context);
-                  // Navigate to about screen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => FavoriteBusesScreen()),
+                  );
                 },
               ),
             ],

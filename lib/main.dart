@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'bus_search_screen.dart';
 import 'bus_name_search_screen.dart';
+import 'favorite_buses_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -121,6 +122,16 @@ class MyHomePage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => BusNameSearchScreen()),
+                  );
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.star, color: Colors.white),
+                title: Text('Favorite', style: TextStyle(color: Colors.white)),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => FavoriteBusesScreen()),
                   );
                 },
               ),

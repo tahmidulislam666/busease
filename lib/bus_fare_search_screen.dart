@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'bus_search_screen.dart';
 import 'bus_name_search_screen.dart';
+import 'favorite_buses_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -334,10 +335,12 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
               ),
               ListTile(
                 leading: Icon(Icons.info, color: Colors.white),
-                title: Text('About', style: TextStyle(color: Colors.white)),
+                title: Text('Favorite', style: TextStyle(color: Colors.white)),
                 onTap: () {
-                  Navigator.pop(context);
-                  // Navigate to the About screen if needed
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => FavoriteBusesScreen()),
+                  );
                 },
               ),
             ],
@@ -442,30 +445,50 @@ class _BusFareSearchScreenState extends State<BusFareSearchScreen> {
                                             child: Column(
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
+                                                // Show start and end address in full, each on its own line
+                                                Text(
+                                                  "${result['From']}",
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.indigo[900],
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                  softWrap: true,
+                                                  overflow: TextOverflow.visible,
+                                                ),
                                                 Row(
                                                   children: [
-                                                    Text(
-                                                      "${result['From']}",
-                                                      style: TextStyle(
-                                                        fontSize: 22,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Colors.indigo[900],
-                                                        letterSpacing: 0.5,
+                                                    Expanded(
+                                                      child: Divider(
+                                                        color: Colors.indigo[300],
+                                                        thickness: 2,
+                                                        height: 24,
                                                       ),
                                                     ),
-                                                    SizedBox(width: 8),
-                                                    Icon(Icons.arrow_forward_rounded, color: Colors.indigo[700], size: 26),
-                                                    SizedBox(width: 8),
-                                                    Text(
-                                                      "${result['To']}",
-                                                      style: TextStyle(
-                                                        fontSize: 22,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Colors.indigo[900],
-                                                        letterSpacing: 0.5,
+                                                    Padding(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                                                      child: Icon(Icons.arrow_downward, color: Colors.indigo[700], size: 26),
+                                                    ),
+                                                    Expanded(
+                                                      child: Divider(
+                                                        color: Colors.indigo[300],
+                                                        thickness: 2,
+                                                        height: 24,
                                                       ),
                                                     ),
                                                   ],
+                                                ),
+                                                Text(
+                                                  "${result['To']}",
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.indigo[900],
+                                                    letterSpacing: 0.5,
+                                                  ),
+                                                  softWrap: true,
+                                                  overflow: TextOverflow.visible,
                                                 ),
                                                 SizedBox(height: 12),
                                                 Wrap(
